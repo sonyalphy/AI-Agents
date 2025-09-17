@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Agent Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root { --bg:#0b1020; --card:#121831; --accent:#4dabf7; --muted:#93a3b8; --text:#e6ebff; }
+      * { box-sizing: border-box; }
+      body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+      .container { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+      .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.06);
+              border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); backdrop-filter: blur(6px); }
+      .title { font-size: 20px; font-weight: 600; margin: 0 0 8px; }
+      .muted { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+      .row { display: flex; gap: 12px; }
+      input, button, select { font-size: 16px; }
+      input[type="text"] { flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #0f1530; color: var(--text); outline: none; }
+      input[type="text"]::placeholder { color: #7f8db3; }
+      button { padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: var(--accent); color: #06101f; font-weight: 600; cursor: pointer; }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+      .chat { display: grid; gap: 8px; margin-top: 12px; max-height: 60vh; overflow: auto; padding-right: 4px; }
+      .bubble { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: #0f1530; }
+      .me { justify-self: end; background: #12204a; }
+      .tool { font-size: 12px; color: var(--muted); margin-top: 2px; }
+      .row2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+      .sid { width: 220px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: #0f1530; color: var(--text); }
+      .footer { margin-top: 8px; color: var(--muted); font-size: 12px; text-align: right; }
+      a { color: #a8c7ff; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <div class="title">🧭 AI Agent Starter</div>
+        <div class="muted">Plan → Act → Observe. Calculator, Memory, Echo, and a simple WebSearch.</div>
+
+        <div class="row2">
+          <input id="sessionId" class="sid" value="demo" />
+          <div class="row">
+            <input id="message" type="text" placeholder="Type a message… e.g., 'add 2.5 and 7' or 'remember that my name is Sony'" />
+            <button id="send">Send</button>
+          </div>
+        </div>
+
+        <div id="chat" class="chat"></div>
+
+        <div class="footer">
+          Backend: <code>/agent/chat</code> — <a href="https://github.com" target="_blank" rel="noreferrer">Fork me</a>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const chat = document.getElementById('chat');
+      const send = document.getElementById('send');
+      const input = document.getElementById('message');
+      const sid = document.getElementById('sessionId');
+
+      function bubble(text, me=false, tools=[]) {
+        const div = document.createElement('div');
+        div.className = 'bubble' + (me ? ' me' : '');
+        div.textContent = text;
+        chat.appendChild(div);
+        if (tools.length && !me) {
+          const tool = document.createElement('div');
+          tool.className = 'tool';
+          tool.textContent = 'tools: ' + tools.join(', ');
+          chat.appendChild(tool);
+        }
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      async function sendMsg() {
+        const message = input.value.trim();
+        if (!message) return;
+        bubble(message, true);
+        input.value='';
+        send.disabled = true;
+        try {
+          const res = await fetch('/agent/chat', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ session_id: sid.value || 'demo', message })
+          });
+          const data = await res.json();
+          bubble(data.reply ?? '(no reply)', false, data.used_tools || []);
+        } catch (e) {
+          bubble('Error contacting server.', false);
+        } finally {
+          send.disabled = false;
+        }
+      }
+
+      send.addEventListener('click', sendMsg);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMsg(); });
+    </script>
+  </body>
+</html>
