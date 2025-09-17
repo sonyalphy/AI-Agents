@@ -23,3 +23,6 @@ docker run -p 8000:8000 ai-agent
 
 ## CI
 GitHub Actions workflow runs tests and builds the Docker image.
+
+## Demo - AI - Agent
+[🎥 Watch Demo](./demo-ai-agent.mov)
